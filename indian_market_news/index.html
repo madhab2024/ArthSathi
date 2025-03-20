@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Market News</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background-color: #1a237e !important;
+        }
+        .card {
+            transition: transform 0.2s;
+            margin-bottom: 20px;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .source-tag {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background-color: #e3f2fd;
+            color: #1565c0;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .timestamp {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .search-box {
+            border-radius: 20px;
+            border: 2px solid #1a237e;
+            padding-left: 20px;
+        }
+        .filter-btn {
+            border-radius: 20px;
+            margin: 0 5px;
+            background-color: #fff;
+            color: #1a237e;
+            border: 2px solid #1a237e;
+        }
+        .filter-btn.active {
+            background-color: #1a237e;
+            color: #fff;
+        }
+        #newsCount {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .news-link {
+            text-decoration: none;
+            color: inherit;
+        }
+        .news-link:hover {
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-chart-line me-2"></i>Indian Market News
+            </span>
+            <span class="text-light" id="lastUpdated"></span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Search and Filters -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <input type="text" class="form-control search-box" id="searchInput" placeholder="Search news...">
+            </div>
+            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                <button class="btn filter-btn active" data-source="all">All Sources</button>
+                <button class="btn filter-btn" data-source="moneycontrol">MoneyControl</button>
+                <button class="btn filter-btn" data-source="economictimes">ET</button>
+                <button class="btn filter-btn" data-source="livemint">Mint</button>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <span id="newsCount"></span>
+        </div>
+
+        <!-- News Container -->
+        <div class="row" id="newsContainer">
+            <!-- News cards will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        // Function to format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Function to create news card
+        function createNewsCard(article) {
+            return `
+                <div class="col-md-6 col-lg-4 news-card" data-source="${article.sourceName?.toLowerCase() || ''}">
+                    <a href="${article.url}" target="_blank" class="news-link">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <span class="source-tag">${article.source.name}</span>
+                                <h5 class="card-title">${article.title}</h5>
+                                <p class="card-text">${article.description}</p>
+                                <div class="timestamp">
+                                    <i class="far fa-clock me-1"></i>
+                                    ${formatDate(article.publishedAt)}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            `;
+        }
+
+        // Function to load and display news
+        async function loadNews() {
+            try {
+                const response = await fetch('market_news.json');
+                const articles = await response.json();
+                
+                // Update last updated time
+                const lastUpdated = new Date().toLocaleString('en-IN');
+                document.getElementById('lastUpdated').textContent = `Last Updated: ${lastUpdated}`;
+                
+                // Display total count
+                document.getElementById('newsCount').textContent = `Showing ${articles.length} articles`;
+                
+                // Display news cards
+                const newsContainer = document.getElementById('newsContainer');
+                newsContainer.innerHTML = articles.map(article => createNewsCard(article)).join('');
+                
+                // Initialize search and filter functionality
+                initializeSearchAndFilter();
+            } catch (error) {
+                console.error('Error loading news:', error);
+                document.getElementById('newsContainer').innerHTML = '<div class="col-12"><div class="alert alert-danger">Error loading news. Please try again later.</div></div>';
+            }
+        }
+
+        // Function to initialize search and filter
+        function initializeSearchAndFilter() {
+            const searchInput = document.getElementById('searchInput');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const newsCards = document.querySelectorAll('.news-card');
+
+            // Search functionality
+            searchInput.addEventListener('input', filterNews);
+
+            // Filter buttons
+            filterButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    filterNews();
+                });
+            });
+
+            function filterNews() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const activeSource = document.querySelector('.filter-btn.active').dataset.source;
+                let visibleCount = 0;
+
+                newsCards.forEach(card => {
+                    const cardContent = card.textContent.toLowerCase();
+                    const cardSource = card.dataset.source;
+                    const matchesSearch = cardContent.includes(searchTerm);
+                    const matchesFilter = activeSource === 'all' || cardSource === activeSource;
+
+                    if (matchesSearch && matchesFilter) {
+                        card.style.display = '';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                document.getElementById('newsCount').textContent = `Showing ${visibleCount} articles`;
+            }
+        }
+
+        // Load news when page loads
+        document.addEventListener('DOMContentLoaded', loadNews);
+
+        // Refresh news every 5 minutes
+        setInterval(loadNews, 300000);
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
