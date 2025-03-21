@@ -1,14 +1,16 @@
-            <div class="nav-buttons">
-                <button class="theme-toggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div> 
+<%- include('partials/header') %>
 
-<div class="hero-section">
+<!-- Hero Section -->
+<section class="hero-section">
     <div class="hero-content">
         <h1 class="welcome-text">Welcome to <span class="highlight">ArthSathi</span></h1>
-        <div class="typed-text">
-            <span id="typed-text"></span>
+        <div class="typed-container">
+            <div class="typed-text">
+                <span id="typed-text"></span>
+            </div>
+            <div class="canvas-container">
+                <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1470&auto=format&fit=crop" alt="Stock Market Candle Chart">
+            </div>
         </div>
         <p class="hero-description">
             Your trusted companion in financial analysis and market insights. Get real-time data, expert analysis, and personalized recommendations to make informed investment decisions.
@@ -24,7 +26,178 @@
             </a>
         </div>
     </div>
-    <div class="hero-image">
-        <img src="/images/dashboard.png" alt="ArthSathi Dashboard">
+</section>
+
+<!-- Image Card Section -->
+<section class="image-card-section">
+    <div class="image-card">
+        <img src="https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=1470&auto=format&fit=crop" alt="Financial Technology">
     </div>
-</div> 
+    <div class="card-content">
+        <h2 class="card-title">Smart Trading Decisions with Advanced Analytics</h2>
+        <p class="card-description">
+            Experience the power of data-driven investing with our comprehensive suite of analytical tools. We combine advanced technology with market expertise to help you make informed trading decisions.
+        </p>
+        <div class="highlight-points">
+            <div class="point-item">
+                <div class="point-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="point-text">Advanced technical analysis tools with real-time data</div>
+            </div>
+            <div class="point-item">
+                <div class="point-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="point-text">AI-powered market predictions and trend analysis</div>
+            </div>
+            <div class="point-item">
+                <div class="point-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="point-text">Personalized portfolio recommendations</div>
+            </div>
+            <div class="point-item">
+                <div class="point-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="point-text">24/7 market monitoring and instant alerts</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section class="services-section">
+    <div class="services-image">
+        <img src="/images/services.jpg" alt="Financial Services">
+    </div>
+    <div class="services-content">
+        <h2 class="services-title">Empowering Your Financial Journey</h2>
+        <p class="services-description">
+            At ArthSathi, we provide comprehensive financial analysis tools and insights to help you make informed investment decisions. Our platform combines cutting-edge technology with expert financial knowledge to deliver a seamless experience.
+        </p>
+        <div class="service-features">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="feature-text">
+                    <h4>Real-time Market Analysis</h4>
+                    <p>Stay updated with live market trends and comprehensive analysis tools.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="feature-text">
+                    <h4>AI-Powered Insights</h4>
+                    <p>Get personalized investment recommendations powered by advanced algorithms.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="feature-text">
+                    <h4>Secure Portfolio Management</h4>
+                    <p>Manage and track your investments with bank-grade security.</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="feature-text">
+                    <h4>Educational Resources</h4>
+                    <p>Access comprehensive learning materials and market insights.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Chat Toggle Button -->
+<button class="chat-toggle">
+    <i class="fas fa-comments"></i>
+    Chat with Us
+</button>
+
+<!-- Chat Container -->
+<div class="chat-container">
+    <div class="chat-header">
+        <h3>ArthSathi Assistant</h3>
+        <button class="close-chat">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="chat-messages">
+        <!-- Messages will be dynamically added here -->
+    </div>
+    <div class="chat-input">
+        <input type="text" placeholder="Type your message...">
+        <button>
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
+
+<!-- Scripts -->
+<script>
+    // Typing animation text
+    const texts = [
+        "Track Real-Time Market Data",
+        "Get AI-Powered Insights",
+        "Make Informed Decisions",
+        "Secure Your Investments"
+    ];
+    let textIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    let typingDelay = 100;
+    let deletingDelay = 50;
+    let newTextDelay = 2000;
+
+    function typeText() {
+        const currentText = texts[textIndex];
+        const typedTextElement = document.getElementById('typed-text');
+
+        if (isDeleting) {
+            typedTextElement.textContent = currentText.substring(0, charIndex - 1);
+            charIndex--;
+            setTimeout(typeText, deletingDelay);
+        } else {
+            typedTextElement.textContent = currentText.substring(0, charIndex + 1);
+            charIndex++;
+            setTimeout(typeText, typingDelay);
+        }
+
+        if (!isDeleting && charIndex === currentText.length) {
+            isDeleting = true;
+            setTimeout(typeText, newTextDelay);
+        } else if (isDeleting && charIndex === 0) {
+            isDeleting = false;
+            textIndex = (textIndex + 1) % texts.length;
+            setTimeout(typeText, typingDelay);
+        }
+    }
+
+    // Start typing animation
+    window.onload = typeText;
+
+    // Chat functionality
+    const chatToggle = document.querySelector('.chat-toggle');
+    const chatContainer = document.querySelector('.chat-container');
+    const closeChat = document.querySelector('.close-chat');
+
+    chatToggle.addEventListener('click', () => {
+        chatContainer.classList.add('active');
+    });
+
+    closeChat.addEventListener('click', () => {
+        chatContainer.classList.remove('active');
+    });
+</script> 

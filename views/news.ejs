@@ -1,41 +1,131 @@
 <%- include('partials/header') %>
 
-<section class="news-section">
-    <div class="container">
-        <h1>Latest Financial News</h1>
-        <div class="news-filters">
-            <button class="filter-btn active" data-category="all">All News</button>
-            <button class="filter-btn" data-category="stock">Stock Market</button>
-            <button class="filter-btn" data-category="crypto">Cryptocurrency</button>
-            <button class="filter-btn" data-category="forex">Forex</button>
+<div class="news-container">
+    <section class="news-header">
+        <h1>News & Financial Updates</h1>
+        <p>Stay informed with the latest financial news, stock market trends, and economic indicators.</p>
+    </section>
+
+    <section class="latest-news">
+        <h2>Latest Financial News</h2>
+        <div class="news-list">
+            <% news.forEach(article => { %>
+                <div class="news-item">
+                    <img src="<%= article.image %>" alt="News Image">
+                    <h3><a href="<%= article.url %>" target="_blank"><%= article.title %></a></h3>
+                    <p><%= article.description %></p>
+                    <span class="news-date"><%= article.date %></span>
+                </div>
+            <% }); %>
         </div>
-        <div class="news-container">
-            <div class="news-scroll">
-                <% if (news && news.length > 0) { %>
-                    <% news.forEach(article => { %>
-                        <div class="news-card" data-category="<%= article.category %>">
-                            <div class="news-image">
-                                <img src="<%= article.image %>" alt="<%= article.title %>">
-                            </div>
-                            <div class="news-content">
-                                <span class="news-category"><%= article.category %></span>
-                                <h3><%= article.title %></h3>
-                                <p><%= article.description %></p>
-                                <div class="news-meta">
-                                    <span class="news-date"><%= article.date %></span>
-                                    <a href="<%= article.url %>" target="_blank" class="read-more">Read More</a>
-                                </div>
-                            </div>
-                        </div>
-                    <% }); %>
-                <% } else { %>
-                    <div class="no-news">
-                        <p>No news available at the moment.</p>
-                    </div>
-                <% } %>
+    </section>
+
+    <section class="market-data">
+        <h2>NIFTY 50 Stock Market Data</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Symbol</th>
+                    <th>Price</th>
+                    <th>Change</th>
+                    <th>% Change</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% stocks.forEach(stock => { %>
+                    <tr>
+                        <td><%= stock.company %></td>
+                        <td><%= stock.symbol %></td>
+                        <td>₹<%= stock.price %></td>
+                        <td class="<%= stock.change >= 0 ? 'positive' : 'negative' %>">
+                            <%= stock.change %>
+                        </td>
+                        <td class="<%= stock.percent_change >= 0 ? 'positive' : 'negative' %>">
+                            <%= stock.percent_change %>%
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="economic-indicators">
+        <h2>Economic Indicators</h2>
+        <div class="indicators">
+            <div class="indicator">
+                <h3>GDP Growth</h3>
+                <p><%= economicData.gdp %>%</p>
+            </div>
+            <div class="indicator">
+                <h3>Inflation Rate</h3>
+                <p><%= economicData.inflation %>%</p>
+            </div>
+            <div class="indicator">
+                <h3>Budget Deficit</h3>
+                <p>₹<%= economicData.budgetDeficit %> Cr</p>
             </div>
         </div>
-    </div>
-</section>
+    </section>
+</div>
 
-<%- include('partials/footer') %> 
+<style>
+.news-container {
+    padding: 2rem 5%;
+    margin-top: 60px;
+}
+
+.news-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.news-header h1 {
+    font-size: 2.5rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.latest-news, .market-data, .economic-indicators {
+    background: var(--card-bg);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.news-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.news-item {
+    background: var(--background-color);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.market-data table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.market-data th, .market-data td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.positive { color: green; }
+.negative { color: red; }
+
+.economic-indicators .indicators {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+</style>
+
+<%- include('partials/footer') %>

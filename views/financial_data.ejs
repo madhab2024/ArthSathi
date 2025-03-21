@@ -46,7 +46,7 @@
         <div class="dashboard-header">
             <div class="header-left">
                 <h1>India's Financial Indicators</h1>
-                <p>GDP Growth and GDP Data Analysis</p>
+                <p>Comprehensive Financial Data Analysis</p>
             </div>
             <div class="header-right">
                 <button class="theme-toggle" id="themeToggle">
@@ -55,24 +55,35 @@
             </div>
         </div>
 
-        <!-- ✅ GDP Growth Chart (Line Chart) -->
-        <h2 style="text-align:center;">India's GDP Growth Rate (%)</h2>
-        <div class="chart-container" style="width: 80%; max-width: 800px; margin: auto;">
+        <h2>Foreign Exchange Reserves & Exchange Rates</h2>
+        <div class="chart-container">
+            <canvas id="forexChart"></canvas>
+        </div>
+
+        <h2>Fiscal Deficit & Government Debt</h2>
+        <div class="chart-container">
+            <canvas id="fiscalChart"></canvas>
+        </div>
+
+        <h2>India's GDP Growth Rate (%)</h2>
+        <div class="chart-container">
             <canvas id="gdpGrowthChart"></canvas>
         </div>
 
-        <!-- ✅ GDP Cards (Between Two Graphs) -->
-        <h2 style="text-align:center; margin-top:20px;">Yearly GDP Growth Data</h2>
-        <div id="gdpCardsContainer" class="cards-container" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
+        <h2>Yearly GDP Growth Data</h2>
+        <div id="gdpCardsContainer" class="cards-container">
             <!-- Cards will be inserted dynamically -->
         </div>
 
-        <!-- ✅ GDP Bar Chart -->
-        <h2 style="text-align:center; margin-top: 30px;">India's GDP Over the Years (in Trillions USD)</h2>
-        <div class="chart-container" style="width: 80%; max-width: 800px; margin: auto;">
+        <h2>India's GDP Over the Years (in Trillions USD)</h2>
+        <div class="chart-container">
             <canvas id="gdpBarChart"></canvas>
         </div>
 
+        <h2>India's Unemployment Rate</h2>
+        <div class="chart-container">
+            <canvas id="unemploymentChart"></canvas>
+        </div>
     </main>
 </div>
 
@@ -90,134 +101,236 @@
         icon.classList.toggle('fa-sun');
     });
 
-    // Fetch GDP Growth Rate (Line Chart) & Cards
-    async function fetchGDPGrowthData() {
+    async function fetchData(apiUrl) {
         try {
-            const response = await fetch("https://api.worldbank.org/v2/country/IN/indicator/NY.GDP.MKTP.KD.ZG?format=json");
+            const response = await fetch(apiUrl);
             const data = await response.json();
-            
-            if (!data[1]) {
-                console.error("No data available");
-                return;
-            }
+            return data[1] ? data[1].filter(entry => entry.value !== null).slice(0, 15).reverse() : [];
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            return [];
+        }
+    }
 
-            const years = [];
-            const gdpGrowthValues = [];
-            const container = document.getElementById("gdpCardsContainer");
-            container.innerHTML = "";
-
-            data[1].slice(0, 10).forEach(entry => { // 📌 Show last 10 years
-                if (entry.value !== null) {
-                    years.push(entry.date);
-                    gdpGrowthValues.push(entry.value.toFixed(2));
-
-                    // Create GDP Card
-                    const card = document.createElement("div");
-                    card.innerHTML = `
-                        <div style="
-                            background: #f8f9fa;
-                            padding: 15px;
-                            border-radius: 8px;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                            text-align: center;
-                            min-width: 150px;
-                        ">
-                            <h3 style="margin: 0;">${entry.date}</h3>
-                            <p style="font-size: 18px; font-weight: bold; color: ${entry.value < 0 ? 'red' : 'green'};">
-                                ${entry.value.toFixed(2)}%
-                            </p>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                }
-            });
-
-            // Create GDP Growth Chart
-            const ctx = document.getElementById('gdpGrowthChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: years.reverse(),
-                    datasets: [{
-                        label: "GDP Growth (%)",
-                        data: gdpGrowthValues.reverse(),
+    async function fetchAndPlotGraphs() {
+        // Foreign Exchange Reserves & Exchange Rates
+        const forexData = await fetchData("https://api.worldbank.org/v2/country/IND/indicator/FI.RES.TOTL.CD?format=json&per_page=20");
+        const exchangeData = await fetchData("https://api.worldbank.org/v2/country/IND/indicator/PA.NUS.FCRF?format=json&per_page=20");
+        
+        new Chart(document.getElementById("forexChart").getContext("2d"), {
+            type: "line",
+            data: {
+                labels: forexData.map(entry => entry.date),
+                datasets: [
+                    {
+                        label: "Foreign Reserves (Billion USD)",
+                        data: forexData.map(entry => (entry.value / 1e9).toFixed(2)),
                         borderColor: "blue",
                         backgroundColor: "rgba(0, 0, 255, 0.2)",
-                        borderWidth: 2,
-                        pointRadius: 4,
-                        pointBackgroundColor: "blue"
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { ticks: { autoSkip: true, maxTicksLimit: 10 } }, 
-                        y: { beginAtZero: false }
+                        fill: true
                     },
-                    elements: { line: { tension: 0.3 } }
-                }
-            });
-
-        } catch (error) {
-            console.error("Error fetching GDP growth data:", error);
-        }
-    }
-
-    // Fetch GDP in Trillions (Bar Chart)
-    async function fetchGDPBarData() {
-        try {
-            const response = await fetch("https://api.worldbank.org/v2/country/IN/indicator/NY.GDP.MKTP.CD?format=json");
-            const data = await response.json();
-            
-            if (!data[1]) {
-                console.error("No data available");
-                return;
-            }
-
-            const years = [];
-            const gdpValues = [];
-
-            data[1].forEach(entry => {
-                if (entry.value !== null) {
-                    years.push(entry.date);
-                    gdpValues.push((entry.value / 1e12).toFixed(2)); // Convert to Trillions
-                }
-            });
-
-            years.reverse();
-            gdpValues.reverse();
-
-            // Create GDP Bar Chart
-            const ctx = document.getElementById('gdpBarChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: years,
-                    datasets: [{
-                        label: "GDP (Trillions USD)",
-                        data: gdpValues,
-                        backgroundColor: "blue",
-                        borderColor: "darkblue",
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { ticks: { autoSkip: true, maxTicksLimit: 10 } }, 
-                        y: { beginAtZero: true }
+                    {
+                        label: "Exchange Rate (INR per USD)",
+                        data: exchangeData.map(entry => entry.value ? entry.value.toFixed(2) : null),
+                        borderColor: "red",
+                        backgroundColor: "rgba(255, 0, 0, 0.2)",
+                        fill: true
+                    }
+                ]
+            },
+            options: { 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
                     }
                 }
-            });
+            }
+        });
 
-        } catch (error) {
-            console.error("Error fetching GDP data:", error);
-        }
+        // Fiscal Deficit & Government Debt
+        const fiscalDeficitData = await fetchData("https://api.worldbank.org/v2/country/IND/indicator/GC.NLD.TOTL.GD.ZS?format=json&per_page=20");
+        const govtDebtData = await fetchData("https://api.worldbank.org/v2/country/IND/indicator/GC.DOD.TOTL.GD.ZS?format=json&per_page=20");
+
+        new Chart(document.getElementById("fiscalChart").getContext("2d"), {
+            type: "line",
+            data: {
+                labels: fiscalDeficitData.map(entry => entry.date),
+                datasets: [
+                    {
+                        label: "Fiscal Deficit (% of GDP)",
+                        data: fiscalDeficitData.map(entry => entry.value ? entry.value.toFixed(2) : null),
+                        borderColor: "green",
+                        backgroundColor: "rgba(0, 255, 0, 0.2)",
+                        fill: true
+                    },
+                    {
+                        label: "Government Debt (% of GDP)",
+                        data: govtDebtData.map(entry => entry.value ? entry.value.toFixed(2) : null),
+                        borderColor: "orange",
+                        backgroundColor: "rgba(255, 165, 0, 0.2)",
+                        fill: true
+                    }
+                ]
+            },
+            options: { 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+
+        // GDP Growth Rate & Cards
+        const gdpGrowthData = await fetchData("https://api.worldbank.org/v2/country/IN/indicator/NY.GDP.MKTP.KD.ZG?format=json");
+        
+        // Create GDP Growth Chart
+        new Chart(document.getElementById("gdpGrowthChart").getContext("2d"), {
+            type: "line",
+            data: {
+                labels: gdpGrowthData.map(entry => entry.date),
+                datasets: [{
+                    label: "GDP Growth (%)",
+                    data: gdpGrowthData.map(entry => entry.value.toFixed(2)),
+                    borderColor: "blue",
+                    backgroundColor: "rgba(0, 0, 255, 0.2)",
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: "blue",
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: { 
+                        ticks: { 
+                            autoSkip: true, 
+                            maxTicksLimit: 10 
+                        } 
+                    },
+                    y: { 
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                elements: { 
+                    line: { 
+                        tension: 0.3 
+                    } 
+                }
+            }
+        });
+
+        // Create GDP Cards
+        const container = document.getElementById("gdpCardsContainer");
+        container.innerHTML = gdpGrowthData.slice(0, 10).map(entry => `
+            <div class="card">
+                <h3 style="margin: 0;">${entry.date}</h3>
+                <p style="font-size: 18px; font-weight: bold; color: ${entry.value < 0 ? 'red' : 'green'};">
+                    ${entry.value.toFixed(2)}%
+                </p>
+            </div>
+        `).join('');
+
+        // GDP Bar Chart
+        const gdpData = await fetchData("https://api.worldbank.org/v2/country/IN/indicator/NY.GDP.MKTP.CD?format=json");
+        
+        new Chart(document.getElementById("gdpBarChart").getContext("2d"), {
+            type: "bar",
+            data: {
+                labels: gdpData.map(entry => entry.date),
+                datasets: [{
+                    label: "GDP (Trillions USD)",
+                    data: gdpData.map(entry => (entry.value / 1e12).toFixed(2)),
+                    backgroundColor: "blue",
+                    borderColor: "darkblue",
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: { 
+                        ticks: { 
+                            autoSkip: true, 
+                            maxTicksLimit: 10 
+                        } 
+                    },
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value + 'T';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Unemployment Rate
+        const unemploymentData = await fetchData("https://api.worldbank.org/v2/country/IND/indicator/SL.UEM.TOTL.ZS?format=json");
+
+        new Chart(document.getElementById("unemploymentChart").getContext("2d"), {
+            type: "line",
+            data: {
+                labels: unemploymentData.map(entry => entry.date),
+                datasets: [{
+                    label: "Unemployment Rate (%)",
+                    data: unemploymentData.map(entry => entry.value),
+                    borderColor: "blue",
+                    backgroundColor: "rgba(0, 0, 255, 0.2)",
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: { 
+                        ticks: { 
+                            autoSkip: true, 
+                            maxTicksLimit: 10 
+                        } 
+                    },
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
-    // Fetch both datasets
-    fetchGDPGrowthData();
-    fetchGDPBarData();
-</script> 
+    fetchAndPlotGraphs();
+</script>

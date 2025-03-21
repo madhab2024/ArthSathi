@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>India's Financial Indicators</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Foreign Exchange Reserves & Exchange Rates</h2>
+    <canvas id="forexChart"></canvas>
+    <p>Note: Foreign reserves are measured in billion USD, while the exchange rate represents INR per USD.</p>
+
+    <h2>Fiscal Deficit & Government Debt</h2>
+    <canvas id="fiscalChart"></canvas>
+    <p>Note: Fiscal deficit and government debt are expressed as a percentage of GDP.</p>
+
+    <script>
+        async function fetchData(apiUrl) {
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                return data[1] ? data[1].filter(entry => entry.value !== null).slice(0, 15).reverse() : [];
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                return [];
+            }
+        }
+
+        async function fetchAndPlotGraphs() {
+            // Fetch data from World Bank API
+            const forexData = await fetchData("https://api.worldbank.org/v2/country/IND/indicator/FI.RES.TOTL.CD?format=json&per_page=20"); // Foreign Reserves
+            const exchangeData = await fetchData("https://api.worldbank.org/v2/country/IND/indicator/PA.NUS.FCRF?format=json&per_page=20"); // Exchange Rate (INR per USD)
+            const fiscalDeficitData = await fetchData("https://api.worldbank.org/v2/country/IND/indicator/GC.NLD.TOTL.GD.ZS?format=json&per_page=20"); // Fiscal Deficit (Net Borrowing)
+            const govtDebtData = await fetchData("https://api.worldbank.org/v2/country/IND/indicator/GC.DOD.TOTL.GD.ZS?format=json&per_page=20"); // Government Debt (% of GDP)
+
+            // Prepare Foreign Exchange & Exchange Rate Data
+            const forexYears = forexData.map(entry => entry.date);
+            const forexValues = forexData.map(entry => (entry.value / 1e9).toFixed(2)); // Convert to Billion USD
+            const exchangeValues = exchangeData.map(entry => entry.value ? entry.value.toFixed(2) : "N/A");
+
+            // Prepare Fiscal Deficit & Government Debt Data
+            const fiscalYears = fiscalDeficitData.map(entry => entry.date);
+            const fiscalValues = fiscalDeficitData.map(entry => entry.value ? entry.value.toFixed(2) : "N/A");
+            const govtDebtValues = govtDebtData.map(entry => entry.value ? entry.value.toFixed(2) : "N/A");
+
+            // Plot Foreign Exchange & Exchange Rate Graph
+            new Chart(document.getElementById("forexChart").getContext("2d"), {
+                type: "line",
+                data: {
+                    labels: forexYears,
+                    datasets: [
+                        {
+                            label: "Foreign Reserves (Billion USD)",
+                            data: forexValues,
+                            borderColor: "blue",
+                            backgroundColor: "rgba(0, 0, 255, 0.2)",
+                            fill: true,
+                            pointRadius: 5
+                        },
+                        {
+                            label: "Exchange Rate (INR per USD)",
+                            data: exchangeValues,
+                            borderColor: "red",
+                            backgroundColor: "rgba(255, 0, 0, 0.2)",
+                            fill: true,
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: { responsive: true }
+            });
+
+            // Plot Fiscal Deficit & Government Debt Graph
+            new Chart(document.getElementById("fiscalChart").getContext("2d"), {
+                type: "line",
+                data: {
+                    labels: fiscalYears,
+                    datasets: [
+                        {
+                            label: "Fiscal Deficit (% of GDP)",
+                            data: fiscalValues,
+                            borderColor: "green",
+                            backgroundColor: "rgba(0, 255, 0, 0.2)",
+                            fill: true,
+                            pointRadius: 5
+                        },
+                        {
+                            label: "Government Debt (% of GDP)",
+                            data: govtDebtValues,
+                            borderColor: "orange",
+                            backgroundColor: "rgba(255, 165, 0, 0.2)",
+                            fill: true,
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: { responsive: true }
+            });
+        }
+
+        fetchAndPlotGraphs();
+    </script>
+</body>
+</html>

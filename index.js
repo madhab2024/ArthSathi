@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 const port = 5000;
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
 const axios = require('axios');
 const chatRouter = require('./routes/chat');
 
@@ -27,31 +29,53 @@ app.get('/about', (req, res) => {
 
 app.get('/news', async (req, res) => {
     try {
-        const apiKey = '66d78dd09e6443d0b9f9bd5f6ae8a3d4';
-        // Updated query for Indian business news
-        const response = await axios.get(`https://newsapi.org/v2/top-headlines?country=in&category=business&q=india&sortBy=publishedAt&language=en&apiKey=${apiKey}`);
-        
-        const news = response.data.articles.map(article => ({
+        // Fetch Latest Financial News
+        const newsResponse = await fetch('https://newsapi.org/v2/top-headlines?category=business&country=in&apiKey=YOUR_NEWSAPI_KEY');
+        const newsData = await newsResponse.json();
+        const news = newsData.articles.map(article => ({
+
             title: article.title,
             description: article.description,
-            image: article.urlToImage || '/images/default-news.jpg',
             url: article.url,
-            date: new Date(article.publishedAt).toLocaleDateString(),
-            category: 'stock' // You can categorize based on keywords or other logic
+            image: article.urlToImage || 'default-news-image.jpg',
+            date: new Date(article.publishedAt).toLocaleDateString()
         }));
 
-        res.render('news', { 
-            title: 'Indian Business News - ArthSathi',
-            news: news
+        // Fetch NIFTY 50 Stock Market Data
+        const stocksResponse = await fetch('https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=NIFTY50&interval=5min&apikey=YOUR_ALPHAVANTAGE_KEY');
+        const stocksData = await stocksResponse.json();
+        const latestTime = Object.keys(stocksData['Time Series (5min)'])[0];
+        const latestStock = stocksData['Time Series (5min)'][latestTime];
+
+        const stocks = [{
+            company: 'NIFTY 50',
+            symbol: 'NIFTY50',
+            price: parseFloat(latestStock['1. open']).toFixed(2),
+            change: (parseFloat(latestStock['4. close']) - parseFloat(latestStock['1. open'])).toFixed(2),
+            percent_change: ((parseFloat(latestStock['4. close']) - parseFloat(latestStock['1. open'])) / parseFloat(latestStock['1. open']) * 100).toFixed(2)
+        }];
+
+        // Fetch Economic Indicators (GDP, Inflation, Budget Deficit)
+        const economicResponse = await fetch('https://api.economicdata.com/india');
+        const economicData = await economicResponse.json();
+
+        res.render('news', {
+            title: "Latest Financial News",
+            news,
+            stocks,
+            economicData: {
+                gdp: economicData.gdp_growth,
+                inflation: economicData.inflation_rate,
+                budgetDeficit: economicData.budget_deficit
+            }
         });
+
     } catch (error) {
-        console.error('Error fetching news:', error);
-        res.render('news', { 
-            title: 'Indian Business News - ArthSathi',
-            news: []
-        });
+        console.error('Error fetching data:', error);
+        res.render('news', { news: [], stocks: [], economicData: {} });
     }
 });
+
 
 app.get('/contributors', (req, res) => {
     res.render('contributors', { title: 'Contributors - ArthSathi' });
